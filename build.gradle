@@ -1,0 +1,15 @@
+apply plugin: 'java'
+
+ext {
+    version__JUnit = '4.9'
+}
+
+repositories {
+    jcenter()
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: version__JUnit
+}
