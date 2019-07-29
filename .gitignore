@@ -1,5 +1,67 @@
-# Ignore Gradle project-specific cache directory
-.gradle
+# auto-import.
+*.iws
+out/
+.idea/**
+.idea/
+*.iml
+**/*.iml
 
-# Ignore Gradle build output directory
-build
+*.swp
+gradle.properties
+
+**/build
+/build
+/build/**
+**/last-stable
+/last-stable
+/last-stable/**
+/bin/**
+/bin/
+**/bin/**
+**/bin/
+/build/
+.settings/
+.settings/**
+*/.settings/
+*/.settings/**
+*/.classpath
+**/.classpath
+/.gradle/
+.metadata/
+.metadata/**
+jrebel_path.dat
+**/src/main/resources/rebel.xml
+**/src/main/resources/rebel-remote.xml
+rebel.xml
+rebel-remote.xml
+
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# Package Files #
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+**/.project/*
+*/.project
+.project
+
+*.iml
+**/.idea/
+*/.idea/
+/.idea/
+
+# Logs #
+*/logs/
+**/src/generated/**
+hostKey.ser
