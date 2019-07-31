@@ -90,6 +90,41 @@ public class CSVParserAnnotationTest
         Assert.assertEquals( new CompositeBean( "aaa", new InnerBean( 123 ) ), bean );
     }
 
+    @Test( expected = ExceptionCSVMapping.class )
+    public void test_GivenParser_ThenParseCSVToBean_WhenHeaderIsNotCompatible_ShouldThrowException()
+    {
+        final CSVParserAnnotation< Bean > parser = new CSVParserAnnotation<>( Bean.class );
+        parser.toBean( "\"aaa\";\"bbb\";\"ccc\"", new CSVDelimiters(), Bean::new );
+    }
+
+    @Test( expected = ExceptionCSVMapping.class )
+    public void test_GivenParser_ThenParseCSVToBean_WhenMappingIsNotCompatible_ShouldThrowException()
+    {
+        final CSVParserAnnotation< Bean > parser = new CSVParserAnnotation<>( Bean.class );
+        try
+        {
+            parser.toBean( "\"aaa\";\"bbb\"", new CSVDelimiters(), Bean::new, MappingBean.mapping( "C1", Integer::valueOf ) );
+        }
+        catch( ExceptionCSVMapping e )
+        {
+            Assert.assertTrue( e.getMessage().contains( "factory mapping does't fit" ) );
+            throw e;
+        }
+    }
+
+    @Test( expected = ExceptionCSVBeanConfiguration.class )
+    public void test_TryToLoadAParserWithABeanNotProperlyConfigured_ShouldThrowException()
+    {
+        new CSVParserAnnotation<>( CrazyBean.class );
+    }
+
+    @CSVBean
+    private static class CrazyBean
+    {
+        @CSVColumn( name = "C1", column = 1 )
+        private final String column1 = "";
+    }
+
     @CSVBean
     private static class Bean
     {

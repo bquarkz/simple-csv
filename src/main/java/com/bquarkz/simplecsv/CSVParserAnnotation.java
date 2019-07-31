@@ -140,7 +140,7 @@ public class CSVParserAnnotation< BEAN >
             }
             catch( IllegalArgumentException | IllegalAccessException e )
             {
-                throw new ExceptionCSVBeanConfiguration( "bean configuration problem", e );
+                throw new ExceptionCSVMapping( "bean configuration problem", e );
             }
             catch( Exception e )
             {
@@ -184,11 +184,12 @@ public class CSVParserAnnotation< BEAN >
             }
             catch( IllegalAccessException e )
             {
-                throw new ExceptionCSVBeanConfiguration( "problems with bean configuration for [ " + header + " ]", e );
+                // it probably will never happen... but anyways
+                throw new ExceptionCSVMapping( "problems with bean configuration for [ " + header + " ]", e );
             }
             catch( Exception e )
             {
-                throw new ExceptionCSVMapping( "factory mapping for [ " + header + " ] does't fit", e );
+                throw new ExceptionCSVMapping( "factory mapping does't fit for [ " + header + " ]", e );
             }
         }
 

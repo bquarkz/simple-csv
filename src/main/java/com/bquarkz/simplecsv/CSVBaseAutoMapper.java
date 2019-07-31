@@ -42,27 +42,31 @@ public class CSVBaseAutoMapper implements CSVAutoMapper
         final String extract = desembrace( delimitersContent, content );
         if( type == Integer.class )
         {
-            return MapperBean.mapInteger( extract );
+            return CSVAutoMapper.mapInteger( extract );
         }
         else if( type == Double.class )
         {
-            return MapperBean.mapDouble( extract );
+            return CSVAutoMapper.mapDouble( extract );
         }
         else if( type == Long.class )
         {
-            return MapperBean.mapLong( extract );
+            return CSVAutoMapper.mapLong( extract );
         }
         else if( type == Float.class )
         {
-            return MapperBean.mapFloat( extract );
+            return CSVAutoMapper.mapFloat( extract );
         }
         else if( type == BigDecimal.class )
         {
-            return MapperBean.mapBigDecimal( extract );
+            return CSVAutoMapper.mapBigDecimal( extract );
         }
         else if( type == String.class )
         {
-            return extract;
+            return CSVAutoMapper.mapString( extract );
+        }
+        else if( type == Boolean.class )
+        {
+            return CSVAutoMapper.mapBoolean( extract );
         }
         else
         {

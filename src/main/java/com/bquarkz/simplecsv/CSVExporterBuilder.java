@@ -89,9 +89,9 @@ public class CSVExporterBuilder< BEAN >
         return this;
     }
 
-    public CSVExporterBuilder< BEAN > shouldWriteHeader( boolean shouldWriteHeader )
+    public CSVExporterBuilder< BEAN > writingHeaders( boolean writingHeaders )
     {
-        this.shouldWriteHeader = shouldWriteHeader;
+        this.shouldWriteHeader = writingHeaders;
         return this;
     }
 

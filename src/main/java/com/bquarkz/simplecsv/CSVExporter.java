@@ -42,13 +42,13 @@ public class CSVExporter< BEAN >
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     public CSVWriter toFile( String outputFilename ) throws IOException
     {
-        csvWriter = new CSVWriter( outputFilename );
+        this.csvWriter = new CSVWriter( outputFilename );
         return csvWriter.writeHeaders();
     }
 
-    public CSVWriter toWriter( OutputStream outputStream ) throws IOException
+    public CSVWriter toOutputStream( OutputStream outputStream ) throws IOException
     {
-        csvWriter = new CSVWriter( outputStream );
+        this.csvWriter = new CSVWriter( outputStream );
         return csvWriter.writeHeaders();
     }
 
@@ -68,11 +68,12 @@ public class CSVExporter< BEAN >
         BEAN from( INPUT rs ) throws Exception;
     }
 
-    public final class CSVWriter implements Closeable
+    public final class CSVWriter implements Closeable, AutoCloseable
     {
         private final OutputStream outputStream;
         private final Writer outputWriter;
         private final BufferedWriter bufferedWriter;
+        private final boolean shouldCloseOutputStream;
 
         CSVWriter( OutputStream outputStream )
         {
@@ -80,7 +81,7 @@ public class CSVExporter< BEAN >
             {
                 throw new IllegalArgumentException( "output stream should not be null" );
             }
-
+            this.shouldCloseOutputStream = false;
             this.outputStream = outputStream;
             this.outputWriter = new OutputStreamWriter( outputStream, builder.getCharset() );
             this.bufferedWriter = new BufferedWriter( outputWriter );
@@ -88,11 +89,12 @@ public class CSVExporter< BEAN >
 
         CSVWriter( String outputFilename ) throws FileNotFoundException
         {
-            if( outputFilename == null || outputFilename.isEmpty() )
+            if( outputFilename == null || outputFilename.trim().isEmpty() )
             {
                 throw new IllegalArgumentException( "output filename should not be empty" );
             }
 
+            this.shouldCloseOutputStream = true;
             this.outputStream = new FileOutputStream( outputFilename );
             this.outputWriter = new OutputStreamWriter( outputStream, builder.getCharset() );
             this.bufferedWriter = new BufferedWriter( outputWriter );
@@ -139,7 +141,6 @@ public class CSVExporter< BEAN >
             final CSVDelimiters delimiters = builder.getDelimiters();
             try
             {
-
                 final String csv = csvParser.toCSV( bean, delimiters, builder.getMappings() );
                 writeLine( csv );
             }
@@ -147,7 +148,7 @@ public class CSVExporter< BEAN >
             {
                 if( builder.shouldNotIgnoreErrors() )
                 {
-                    throw new IllegalArgumentException( "problems with bean mappings", e );
+                    throw e;
                 }
             }
         }
@@ -163,12 +164,13 @@ public class CSVExporter< BEAN >
         @Override
         public void close() throws IOException
         {
+            bufferedWriter.flush();
+            outputWriter.flush();
+            outputWriter.flush();
+
             bufferedWriter.close();
             outputWriter.close();
-            if( outputStream != null )
-            {
-                outputStream.close();
-            }
+            if( shouldCloseOutputStream ) outputStream.close();
         }
     }
 }

@@ -12,7 +12,7 @@ import static com.bquarkz.simplecsv.CSVUtils.fromPosixStartsWithDelimiter;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 
-public class CSVBufferedReader implements Closeable
+public class CSVBufferedReader implements Closeable, Iterable< String >
 {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Constants
@@ -40,7 +40,7 @@ public class CSVBufferedReader implements Closeable
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    public CSVBufferedReader( Reader inputStream, int bufferSize, CSVDelimiters delimiters, boolean shouldSkipHeader )
+    CSVBufferedReader( Reader inputStream, int bufferSize, CSVDelimiters delimiters, boolean shouldSkipHeader )
     {
         this.shouldSkipHeader = shouldSkipHeader;
         this.lock = new Object();
@@ -88,9 +88,15 @@ public class CSVBufferedReader implements Closeable
         }
     }
 
-    public Stream< String > readAsStream()
+    @Override
+    public Iterator< String > iterator()
     {
-        final Iterator<String> iterator = new Iterator<String>()
+        return buildIterator();
+    }
+
+    private Iterator< String > buildIterator()
+    {
+        return new Iterator<String>()
         {
             String nextRow = null;
 
@@ -130,6 +136,11 @@ public class CSVBufferedReader implements Closeable
                 }
             }
         };
+    }
+
+    public Stream< String > readAsStream()
+    {
+        final Iterator<String> iterator = buildIterator();
         return stream( spliteratorUnknownSize( iterator, Spliterator.ORDERED | Spliterator.NONNULL ), false );
     }
 
@@ -325,14 +336,12 @@ public class CSVBufferedReader implements Closeable
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Inner Classes And Patterns
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    public static class Row
+    static class Row
     {
         private final boolean isHeader;
         private final String rowContent;
 
-        public Row(
-                boolean isHeader,
-                String rowContent )
+        Row( boolean isHeader, String rowContent )
         {
             this.isHeader = isHeader;
             this.rowContent = rowContent;

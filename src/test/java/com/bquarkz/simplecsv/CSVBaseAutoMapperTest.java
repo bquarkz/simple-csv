@@ -81,6 +81,17 @@ public class CSVBaseAutoMapperTest
     }
 
     @Test
+    public void test_GiveBooleanContent_ThenAutoMapAsABoolean_ShouldReturnABoolean()
+    {
+        final CSVAutoMapper autoMapper = new CSVBaseAutoMapper();
+        final Object o = autoMapper.map( Boolean.class, "'", "'true'" );
+        Assert.assertNotNull( o );
+        Assert.assertTrue( o instanceof Boolean );
+        Assert.assertTrue( (Boolean)o );
+    }
+
+
+    @Test
     public void test_ExtendsCSVBaseAutoMapper()
     {
         final CSVAutoMapper autoMapper = new TestMapper();

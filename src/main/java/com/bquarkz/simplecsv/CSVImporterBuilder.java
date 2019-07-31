@@ -143,15 +143,15 @@ public class CSVImporterBuilder< BEAN >
         return this;
     }
 
-    public CSVImporterBuilder< BEAN > skippingHeader()
+    public CSVImporterBuilder< BEAN > skippingHeader( boolean skippingHeader )
     {
-        this.shouldSkipHeader = true;
+        this.shouldSkipHeader = skippingHeader;
         return this;
     }
 
-    public CSVImporterBuilder< BEAN > verifyingHeader()
+    public CSVImporterBuilder< BEAN > verifyingHeader( boolean verifyingHeader )
     {
-        this.shouldVerifyHeader = true;
+        this.shouldVerifyHeader = verifyingHeader;
         return this;
     }
 
