@@ -1,6 +1,6 @@
 package com.bquarkz.simplecsv;
 
-import static com.bquarkz.simplecsv.CSVUtils.desembrace;
+import java.math.BigDecimal;
 
 @FunctionalInterface
 public interface MapperBean
@@ -38,36 +38,9 @@ public interface MapperBean
         return Boolean.valueOf( content );
     }
 
-    static Object autoMapper(
-            final Class< ? > type,
-            final String delimitersContent,
-            final String content )
+    static BigDecimal mapBigDecimal( String content )
     {
-        final String extract = desembrace( delimitersContent, content );
-        if( type == Integer.class )
-        {
-            return mapInteger( extract );
-        }
-        else if( type == Double.class )
-        {
-            return mapDouble( extract );
-        }
-        else if( type == Long.class )
-        {
-            return mapLong( extract );
-        }
-        else if( type == Float.class )
-        {
-            return mapFloat( extract );
-        }
-        else if( type == String.class )
-        {
-            return extract;
-        }
-        else
-        {
-            return extract; // by default return content as a String
-        }
+        return new BigDecimal( content );
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

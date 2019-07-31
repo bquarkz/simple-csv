@@ -21,11 +21,7 @@ public final class CSVBuilder< BEAN >
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CSVBuilder( Class< BEAN > classBean, CSVAutoMapper autoMapper )
     {
-        if( autoMapper == null )
-        {
-            autoMapper = new CSVBaseAutoMapper();
-        }
-        CSVParserAnnotation< BEAN > parser = new CSVParserAnnotation<>( classBean, autoMapper );
+        final CSVParserAnnotation< BEAN > parser = new CSVParserAnnotation<>( classBean, autoMapper );
         this.importerBuilder = new CSVImporterBuilder<>( classBean, parser );
         this.exporterBuilder = new CSVExporterBuilder<>( parser );
     }
@@ -35,12 +31,12 @@ public final class CSVBuilder< BEAN >
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     public static < BEAN > CSVImporterBuilder< BEAN > newImporter( Class< BEAN > classBean )
     {
-        return new CSVBuilder<>( classBean, null ).importerBuilder;
+        return new CSVBuilder<>( classBean, new CSVBaseAutoMapper() ).importerBuilder;
     }
 
     public static < BEAN > CSVExporterBuilder< BEAN > newExporter( Class< BEAN > classBean )
     {
-        return new CSVBuilder<>( classBean, null ).exporterBuilder;
+        return new CSVBuilder<>( classBean, new CSVBaseAutoMapper() ).exporterBuilder;
     }
 
     public static < BEAN > CSVImporterBuilder< BEAN > newImporter( Class< BEAN > classBean, CSVAutoMapper autoMapper )

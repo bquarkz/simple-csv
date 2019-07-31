@@ -1,5 +1,7 @@
 package com.bquarkz.simplecsv;
 
+import java.math.BigDecimal;
+
 import static com.bquarkz.simplecsv.CSVUtils.desembrace;
 
 public class CSVBaseAutoMapper implements CSVAutoMapper
@@ -35,10 +37,7 @@ public class CSVBaseAutoMapper implements CSVAutoMapper
     // Methods
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @Override
-    public Object map(
-            Class< ? > type,
-            String delimitersContent,
-            String content )
+    public Object map( final Class< ? > type, final String delimitersContent, final String content )
     {
         final String extract = desembrace( delimitersContent, content );
         if( type == Integer.class )
@@ -56,6 +55,10 @@ public class CSVBaseAutoMapper implements CSVAutoMapper
         else if( type == Float.class )
         {
             return MapperBean.mapFloat( extract );
+        }
+        else if( type == BigDecimal.class )
+        {
+            return MapperBean.mapBigDecimal( extract );
         }
         else if( type == String.class )
         {

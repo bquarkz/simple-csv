@@ -1,7 +1,5 @@
 package com.bquarkz.simplecsv;
 
-import static com.bquarkz.simplecsv.CSVUtils.desembrace;
-
 @FunctionalInterface
 public interface CSVAutoMapper
 {

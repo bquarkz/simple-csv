@@ -2,13 +2,14 @@ package com.bquarkz.simplecsv;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.*;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.bquarkz.simplecsv.CSVUtils.findDelimiter;
 import static com.bquarkz.simplecsv.CSVUtils.splitOnColumns;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
@@ -36,6 +37,11 @@ public class CSVParserAnnotation< BEAN >
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    CSVParserAnnotation( Class< BEAN > classBean )
+    {
+        this( classBean, new CSVBaseAutoMapper() );
+    }
+
     CSVParserAnnotation( Class< BEAN > classBean, CSVAutoMapper autoMapper )
     {
         this.autoMapper = autoMapper;
@@ -192,4 +198,9 @@ public class CSVParserAnnotation< BEAN >
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Inner Classes And Patterns
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    private static class CSVField
+    {
+        private Class< ? > klass;
+        private Field field;
+    }
 }

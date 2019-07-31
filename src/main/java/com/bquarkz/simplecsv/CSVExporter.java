@@ -1,7 +1,6 @@
 package com.bquarkz.simplecsv;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;

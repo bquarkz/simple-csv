@@ -8,7 +8,7 @@ import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 
-import static com.bquarkz.simplecsv.CSVUtils.findDelimiter;
+import static com.bquarkz.simplecsv.CSVUtils.fromPosixStartsWithDelimiter;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 
@@ -150,13 +150,13 @@ public class CSVBufferedReader implements Closeable
     Row _readNextRow() throws IOException
     {
         // skip line when it finds a comment delimiter on beginning
-        boolean skipLine = findDelimiter( buffer, readPosix, delimiters.getComment() );
+        boolean skipLine = fromPosixStartsWithDelimiter( buffer, readPosix, delimiters.getComment() );
         boolean eor = false;
         boolean stateContent = false;
         final StringBuffer sb = new StringBuffer();
         do
         {
-            if( findDelimiter( buffer, readPosix, delimiters.getContent() ) )
+            if( fromPosixStartsWithDelimiter( buffer, readPosix, delimiters.getContent() ) )
             {
                 final char[] nextChars = nextFewChars( delimiters.getContent().length() );
                 if( nextChars == null ) break;
@@ -172,7 +172,7 @@ public class CSVBufferedReader implements Closeable
 
             if( !stateContent )
             {
-                if( findDelimiter( buffer, readPosix, delimiters.getRow() ) )
+                if( fromPosixStartsWithDelimiter( buffer, readPosix, delimiters.getRow() ) )
                 {
                     final char[] nextChars = nextFewChars( delimiters.getRow().length() );// skip the row delimiter
                     eor = ( nextChars == null ) || !skipLine;

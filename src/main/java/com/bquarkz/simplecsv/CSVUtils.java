@@ -28,14 +28,17 @@ public interface CSVUtils
         }
     }
 
-    static boolean findDelimiter( char[] buffer, int posix, String content )
+    static boolean fromPosixStartsWithDelimiter( final char[] buffer, final int posix, final String content )
     {
+        if( buffer == null ) return false;
         if( content == null || content.isEmpty() ) return true;
+        if( buffer.length < content.length() ) return false;
 
         for( int index = 0; index < content.length(); index++ )
         {
-            if( posix >= buffer.length ) return false;
-            if( content.charAt( index ) != buffer[ posix ] ) return false;
+            final int tempPosix = posix + index;
+            if( tempPosix >= buffer.length ) return false;
+            if( content.charAt( index ) != buffer[ tempPosix ] ) return false;
         }
         return true;
     }
@@ -50,11 +53,21 @@ public interface CSVUtils
         StringBuffer sb = new StringBuffer();
         do
         {
-            if( findDelimiter( buffer, posix, contentDelimiter ) )
+            if( fromPosixStartsWithDelimiter( buffer, posix, contentDelimiter ) )
             {
                 sb.append( content, posix, posix + contentDelimiter.length() );
                 posix += contentDelimiter.length();
                 stateContent = !stateContent;
+            }
+            // for "blank" columns
+            else if( !stateContent && fromPosixStartsWithDelimiter( buffer, posix, columnDelimiter ) )
+            {
+                posix += columnDelimiter.length();
+                if( posix < content.length() )
+                {
+                    contents.add( sb.toString() );
+                }
+                sb = new StringBuffer();
             }
             else if( posix < content.length() )
             {
@@ -75,7 +88,8 @@ public interface CSVUtils
                     contents.add( sb.toString() );
                 }
 
-                if( findDelimiter( buffer, posix, columnDelimiter ) )
+                // normally for last content
+                if( fromPosixStartsWithDelimiter( buffer, posix, columnDelimiter ) )
                 {
                     posix += columnDelimiter.length();
                     contents.add( sb.toString() );
