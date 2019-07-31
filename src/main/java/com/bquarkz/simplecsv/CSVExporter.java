@@ -20,13 +20,12 @@ public class CSVExporter< BEAN >
     // Fields
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     private final CSVExporterBuilder< BEAN > builder;
-
-    private CSVWriter writer;
+    private CSVWriter csvWriter;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    public CSVExporter( CSVExporterBuilder< BEAN > builder )
+    CSVExporter( CSVExporterBuilder< BEAN > builder )
     {
         this.builder = builder;
     }
@@ -42,38 +41,73 @@ public class CSVExporter< BEAN >
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Methods
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    public CSVWriter to( String outputFilename ) throws IOException
+    public CSVWriter toFile( String outputFilename ) throws IOException
     {
-        writer = new CSVWriter( outputFilename, builder.getCharset() );
-        if( builder.shouldWriteHeader() )
-        {
-            String columnDelimiter = builder.getDelimiters().getColumn();
-            final String[] headers = builder.getCsvParser().getCSVHeaders();
-            writer.writeLine( String.join( columnDelimiter, headers ) );
-        }
-        return writer;
+        csvWriter = new CSVWriter( outputFilename );
+        return csvWriter.writeHeaders();
+    }
+
+    public CSVWriter toWriter( OutputStream outputStream ) throws IOException
+    {
+        csvWriter = new CSVWriter( outputStream );
+        return csvWriter.writeHeaders();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Inner Classes And Patterns
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @FunctionalInterface
-    public interface ResultSetBeanFactory< BEAN >
+    public interface ResultSetBeanFactory< BEAN > extends CSVBeanFactory< ResultSet, BEAN >
     {
+        @Override
         BEAN from( ResultSet rs ) throws SQLException;
+    }
+
+    @FunctionalInterface
+    public interface CSVBeanFactory< INPUT, BEAN >
+    {
+        BEAN from( INPUT rs ) throws Exception;
     }
 
     public final class CSVWriter implements Closeable
     {
-        private final FileOutputStream fileOutputStream;
-        private final OutputStreamWriter outputStreamWriter;
+        private final OutputStream outputStream;
+        private final Writer outputWriter;
         private final BufferedWriter bufferedWriter;
 
-        CSVWriter( String output, Charset charset ) throws FileNotFoundException
+        CSVWriter( OutputStream outputStream )
         {
-            this.fileOutputStream = new FileOutputStream( output );
-            this.outputStreamWriter = new OutputStreamWriter( fileOutputStream, charset );
-            this.bufferedWriter = new BufferedWriter( outputStreamWriter );
+            if( outputStream == null )
+            {
+                throw new IllegalArgumentException( "output stream should not be null" );
+            }
+
+            this.outputStream = outputStream;
+            this.outputWriter = new OutputStreamWriter( outputStream, builder.getCharset() );
+            this.bufferedWriter = new BufferedWriter( outputWriter );
+        }
+
+        CSVWriter( String outputFilename ) throws FileNotFoundException
+        {
+            if( outputFilename == null || outputFilename.isEmpty() )
+            {
+                throw new IllegalArgumentException( "output filename should not be empty" );
+            }
+
+            this.outputStream = new FileOutputStream( outputFilename );
+            this.outputWriter = new OutputStreamWriter( outputStream, builder.getCharset() );
+            this.bufferedWriter = new BufferedWriter( outputWriter );
+        }
+
+        private CSVWriter writeHeaders() throws IOException
+        {
+            if( builder.shouldWriteHeader() )
+            {
+                String columnDelimiter = builder.getDelimiters().getColumn();
+                final String[] headers = builder.getCsvParser().getCSVHeaders();
+                writeLine( String.join( columnDelimiter, headers ) );
+            }
+            return this;
         }
 
         private void writeLine( String line ) throws IOException
@@ -82,7 +116,9 @@ public class CSVExporter< BEAN >
             this.bufferedWriter.write( builder.getDelimiters().getRow() );
         }
 
-        public void writeFrom( ResultSet rs, ResultSetBeanFactory< BEAN > factory ) throws IOException
+        public void writeFrom(
+                final ResultSet rs,
+                final ResultSetBeanFactory< BEAN > factory ) throws IOException
         {
             try
             {
@@ -94,7 +130,7 @@ public class CSVExporter< BEAN >
             }
             catch( SQLException e )
             {
-                throw new CSVWriterException( e );
+                throw new ExceptionCSVWriter( e );
             }
         }
 
@@ -102,8 +138,19 @@ public class CSVExporter< BEAN >
         {
             final CSVParser< BEAN > csvParser = builder.getCsvParser();
             final CSVDelimiters delimiters = builder.getDelimiters();
-            final String csv = csvParser.toCSV( bean, delimiters );
-            writeLine( csv );
+            try
+            {
+
+                final String csv = csvParser.toCSV( bean, delimiters, builder.getMappings() );
+                writeLine( csv );
+            }
+            catch( ExceptionCSVMapping e )
+            {
+                if( builder.shouldNotIgnoreErrors() )
+                {
+                    throw new IllegalArgumentException( "problems with bean mappings", e );
+                }
+            }
         }
 
         public void write( List< BEAN > beans ) throws IOException
@@ -118,8 +165,11 @@ public class CSVExporter< BEAN >
         public void close() throws IOException
         {
             bufferedWriter.close();
-            outputStreamWriter.close();
-            fileOutputStream.close();
+            outputWriter.close();
+            if( outputStream != null )
+            {
+                outputStream.close();
+            }
         }
     }
 }

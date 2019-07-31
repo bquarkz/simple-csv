@@ -2,14 +2,15 @@ package com.bquarkz.simplecsv;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.bquarkz.simplecsv.CSVUtils.findDelimiter;
+import static com.bquarkz.simplecsv.CSVUtils.splitOnColumns;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
 
 public class CSVParserAnnotation< BEAN >
@@ -27,42 +28,50 @@ public class CSVParserAnnotation< BEAN >
     // Fields
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     private final String[] headers;
-    private final boolean shouldWriteHeader;
-    private final List< ColumnDetails > columnDetails;
+    private final CSVParserDetails parserDetails;
+    private final List< Field > columnFields;
+    private final Map< String, Field > fieldsMap;
+    private final CSVAutoMapper autoMapper;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CSVParserAnnotation( Class< BEAN > classBean )
+    CSVParserAnnotation( Class< BEAN > classBean, CSVAutoMapper autoMapper )
     {
+        this.autoMapper = autoMapper;
+
         CSVBean bean = classBean.getAnnotation( CSVBean.class );
         if( bean == null )
         {
-            throw new CSVBeanConfigurationException( "The annotation: "
+            throw new ExceptionCSVBeanConfiguration( "The annotation: "
                     + CSVBean.class.getName() + " is not present on bean: "
                     + classBean.getSimpleName() );
         }
 
-        columnDetails = Stream
+        columnFields = Stream
                 .of( classBean.getDeclaredFields() )
                 .filter( f -> ( f.getModifiers() & ( Modifier.FINAL | Modifier.STATIC ) ) == 0 )
                 .filter( f -> f.isAnnotationPresent( CSVColumn.class ) )
                 .sorted( Comparator.comparingInt( f -> f.getAnnotation( CSVColumn.class ).column() ) )
-                .map( ColumnDetails::new )
                 .collect( Collectors.toList() );
 
-        if( columnDetails.isEmpty() )
+        if( columnFields.isEmpty() )
         {
-            throw new CSVBeanConfigurationException( "No fields with annotation: "
-                    + CSVColumn.class.getName() + " and the BEAN should not be empty" );
+            throw new ExceptionCSVBeanConfiguration( "No fields with annotation: "
+                    + CSVColumn.class.getName() + " and "
+                    + classBean.getSimpleName() + " should not be empty" );
         }
 
-        headers = columnDetails
+        headers = columnFields
                 .stream()
                 .map( this::columnNameMapper )
                 .toArray( String[]::new );
 
-        shouldWriteHeader = bean.shouldWriteHeader();
+        fieldsMap = columnFields
+                .stream()
+                .collect( Collectors.toMap( this::columnNameMapper, f -> f ) );
+
+        parserDetails = new CSVParserDetails( bean );
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,17 +85,23 @@ public class CSVParserAnnotation< BEAN >
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Methods
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    private String columnNameMapper( ColumnDetails cd )
+    private String columnNameMapper( Field field )
     {
-        final String name = cd.field.getAnnotation( CSVColumn.class ).name();
+        final String name = field.getAnnotation( CSVColumn.class ).name();
         if( name.trim().isEmpty() )
         {
-            return cd.field.getName();
+            return field.getName();
         }
         else
         {
             return name;
         }
+    }
+
+    @Override
+    public CSVParserDetails getParserDetails()
+    {
+        return parserDetails;
     }
 
     @Override
@@ -96,57 +111,85 @@ public class CSVParserAnnotation< BEAN >
     }
 
     @Override
-    public String toCSV( BEAN bean, CSVDelimiters delimiters )
+    public String toCSV(
+            final BEAN bean,
+            final CSVDelimiters delimiters,
+            final MappingCSV... mappings ) throws ExceptionCSVMapping
     {
-        try
+        final Map< String, MapperCSV > maps = Stream
+                .of( mappings )
+                .collect( toMap( MappingCSV::columnName, MappingCSV::mapper ) );
+
+        final List< String > contents = new ArrayList<>();
+        for( final Field field : columnFields )
         {
-            final List< String > contents = new ArrayList<>();
-            for( ColumnDetails cd : columnDetails )
+            field.setAccessible( true );
+            final MapperCSV mapper = ofNullable( maps.get( columnNameMapper( field ) ) ).orElse( Object::toString );
+            try
             {
-                cd.field.setAccessible( true );
-                final String content = delimiters.getContent()
-                        + cd.factory.apply( cd.field.get( bean ) )
-                        + delimiters.getContent();
+                final Object value = field.get( bean );
+                final String mappedValue = value == null ? null : mapper.map( value );
+                final String content = CSVUtils.embrace( delimiters.getContent(), mappedValue );
                 contents.add( content );
             }
-            return String.join( delimiters.getColumn(), contents.toArray( String[]::new ) );
+            catch( IllegalArgumentException | IllegalAccessException e )
+            {
+                throw new ExceptionCSVBeanConfiguration( "bean configuration problem", e );
+            }
+            catch( Exception e )
+            {
+                throw new ExceptionCSVMapping( e );
+            }
         }
-        catch( IllegalAccessException ignored )
+        return String.join( delimiters.getColumn(), contents.toArray( new String[ contents.size() ] ) );
+    }
+
+    @Override
+    public BEAN toBean(
+            final String csv,
+            final CSVDelimiters delimiters,
+            final Supplier< BEAN > factory,
+            final MappingBean... mappings ) throws ExceptionCSVMapping
+    {
+        final Map< String, MapperBean > maps = Stream
+                .of( mappings )
+                .collect( toMap( MappingBean::columnName, MappingBean::mapper ) );
+
+        final String[] contents = splitOnColumns( csv, delimiters.getContent(), delimiters.getColumn() );
+        if( contents.length != headers.length )
         {
+            throw new ExceptionCSVMapping( "number of columns on content doesn't fit header number of columns" );
         }
 
-        return null;
-    }
+        final BEAN bean = factory.get();
+        for( int i = 0; i < headers.length; i++ )
+        {
+            final String header = headers[ i ];
+            final String content = CSVUtils.desembrace( delimiters.getContent(), contents[ i ] );
 
-    @Override
-    public BEAN toBean( String csv, CSVDelimiters delimiters )
-    {
-        return null;
-    }
+            final Field field = fieldsMap.get( header );
+            final MapperBean mapper = ofNullable( maps.get( header ) )
+                    .orElseGet( () -> csvContent -> autoMapper.map( field.getType(), delimiters.getContent(), csvContent ) );
+            try
+            {
+                final Object object = mapper.map( content );
+                field.setAccessible( true );
+                field.set( bean, object );
+            }
+            catch( IllegalAccessException e )
+            {
+                throw new ExceptionCSVBeanConfiguration( "problems with bean configuration for [ " + header + " ]", e );
+            }
+            catch( Exception e )
+            {
+                throw new ExceptionCSVMapping( "factory mapping for [ " + header + " ] does't fit", e );
+            }
+        }
 
-    @Override
-    public boolean shouldWriteHeader()
-    {
-        return shouldWriteHeader;
+        return bean;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Inner Classes And Patterns
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    private static class ColumnDetails
-    {
-        private final Field field;
-        private Function< Object, String > factory;
-
-        public ColumnDetails( Field field )
-        {
-            this( field, Object::toString );
-        }
-
-        public ColumnDetails( Field field, Function< Object, String > factory )
-        {
-            this.field = field;
-            this.factory = factory;
-        }
-    }
 }
