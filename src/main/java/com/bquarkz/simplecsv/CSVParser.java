@@ -1,5 +1,7 @@
 package com.bquarkz.simplecsv;
 
+import java.util.function.Supplier;
+
 public interface CSVParser< BEAN >
 {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -18,7 +20,7 @@ public interface CSVParser< BEAN >
     // Contracts
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     String[] getCSVHeaders();
-    String toCSV( BEAN bean, CSVDelimiters delimiters );
-    BEAN toBean( String csv, CSVDelimiters delimiters );
-    boolean shouldWriteHeader();
+    String toCSV( BEAN bean, CSVDelimiters delimiters, MappingCSV... mappings ) throws ExceptionCSVMapping;
+    BEAN toBean( String csv, CSVDelimiters delimiters, Supplier< BEAN > factory, MappingBean... mappings ) throws ExceptionCSVMapping;
+    CSVParserDetails getParserDetails();
 }

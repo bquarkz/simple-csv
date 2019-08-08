@@ -1,6 +1,6 @@
 package com.bquarkz.simplecsv;
 
-public class CSVDelimiters
+public final class CSVDelimiters
 {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Constants
@@ -16,20 +16,22 @@ public class CSVDelimiters
     private final String column;
     private final String row;
     private final String content;
+    private final String comment;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     public CSVDelimiters()
     {
-        this( ";", "\n", "\"" );
+        this( ";", "\n", "\"", "#" );
     }
 
-    public CSVDelimiters( String column, String row, String content )
+    public CSVDelimiters( String column, String row, String content, String comment )
     {
         this.column = column;
         this.row = row;
         this.content = content;
+        this.comment = comment;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -52,6 +54,11 @@ public class CSVDelimiters
     public String getContent()
     {
         return content;
+    }
+
+    public String getComment()
+    {
+        return comment;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

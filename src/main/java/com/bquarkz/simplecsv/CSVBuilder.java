@@ -19,10 +19,10 @@ public final class CSVBuilder< BEAN >
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CSVBuilder( Class< BEAN > classBean )
+    CSVBuilder( Class< BEAN > classBean, CSVAutoMapper autoMapper )
     {
-        CSVParserAnnotation< BEAN > parser = new CSVParserAnnotation<>( classBean );
-        this.importerBuilder = new CSVImporterBuilder<>( parser );
+        final CSVParserAnnotation< BEAN > parser = new CSVParserAnnotation<>( classBean, autoMapper );
+        this.importerBuilder = new CSVImporterBuilder<>( classBean, parser );
         this.exporterBuilder = new CSVExporterBuilder<>( parser );
     }
 
@@ -31,12 +31,22 @@ public final class CSVBuilder< BEAN >
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     public static < BEAN > CSVImporterBuilder< BEAN > newImporter( Class< BEAN > classBean )
     {
-        return new CSVBuilder<>( classBean ).importerBuilder;
+        return new CSVBuilder<>( classBean, new CSVBaseAutoMapper() ).importerBuilder;
     }
 
     public static < BEAN > CSVExporterBuilder< BEAN > newExporter( Class< BEAN > classBean )
     {
-        return new CSVBuilder<>( classBean ).exporterBuilder;
+        return new CSVBuilder<>( classBean, new CSVBaseAutoMapper() ).exporterBuilder;
+    }
+
+    public static < BEAN > CSVImporterBuilder< BEAN > newImporter( Class< BEAN > classBean, CSVAutoMapper autoMapper )
+    {
+        return new CSVBuilder<>( classBean, autoMapper ).importerBuilder;
+    }
+
+    public static < BEAN > CSVExporterBuilder< BEAN > newExporter( Class< BEAN > classBean, CSVAutoMapper autoMapper )
+    {
+        return new CSVBuilder<>( classBean, autoMapper ).exporterBuilder;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

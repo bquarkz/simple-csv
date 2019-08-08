@@ -23,6 +23,8 @@ public class CSVExporterBuilder< BEAN >
 
     private Boolean shouldWriteHeader;
     private Charset charset;
+    private boolean ignoringErrors;
+    private MappingCSV[] mappings;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors
@@ -31,6 +33,7 @@ public class CSVExporterBuilder< BEAN >
     {
         this.csvParser = csvParser;
         this.delimiters = new CSVDelimiters();
+        this.ignoringErrors = true;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -52,13 +55,24 @@ public class CSVExporterBuilder< BEAN >
 
     boolean shouldWriteHeader()
     {
-        return ofNullable( shouldWriteHeader ).orElse( csvParser.shouldWriteHeader() );
+        return ofNullable( shouldWriteHeader ).orElse( csvParser.getParserDetails().shouldWriteHeader() );
     }
 
     Charset getCharset()
     {
         return ofNullable( charset ).orElse( StandardCharsets.UTF_8 );
     }
+
+    boolean shouldNotIgnoreErrors()
+    {
+        return !ignoringErrors;
+    }
+
+    MappingCSV[] getMappings()
+    {
+        return mappings;
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Methods
@@ -75,15 +89,27 @@ public class CSVExporterBuilder< BEAN >
         return this;
     }
 
-    public CSVExporterBuilder< BEAN > shouldWriteHeader( boolean shouldWriteHeader )
+    public CSVExporterBuilder< BEAN > writingHeaders( boolean writingHeaders )
     {
-        this.shouldWriteHeader = shouldWriteHeader;
+        this.shouldWriteHeader = writingHeaders;
         return this;
     }
 
     public CSVExporterBuilder< BEAN > usingCharset( Charset charset )
     {
         this.charset = charset;
+        return this;
+    }
+
+    public CSVExporterBuilder< BEAN > ignoringErrors( boolean ignoringErrors )
+    {
+        this.ignoringErrors = ignoringErrors;
+        return this;
+    }
+
+    public CSVExporterBuilder< BEAN > withMappings( MappingCSV... mappings )
+    {
+        this.mappings = mappings;
         return this;
     }
 

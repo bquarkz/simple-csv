@@ -10,5 +10,6 @@ import java.lang.annotation.Target;
 public @interface CSVBean
 {
     boolean shouldWriteHeader() default true;
-    boolean useContentDelimiters() default true;
+    boolean shouldSkipHeader() default false;
+    boolean shouldVerifyHeader() default false;
 }
